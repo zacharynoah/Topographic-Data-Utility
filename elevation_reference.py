@@ -1,6 +1,3 @@
-
-
-
 import arcpy
 import os
 from ftp_test import get_data
@@ -17,7 +14,6 @@ else:
     sys.exit(0)
 
 
-# C:\Users\negra\PycharmProjects\Data_Utility\data\random_counties.zip
 print "Welcome to Zack's Data Utility program!\nThis program will convert your shapefiles into high resolution DEMs\n" \
       "Warning: There may be errors if your shapefile is not in the WGS84 data\n" \
       "The output after the program has run will be in the C:\ drive with the filename image\n"
@@ -28,7 +24,7 @@ for name in z.namelist():
     if name[-3:] == 'shp':
         shapefile = name
     z.extract(name, "data")
-
+#
 shapefile = 'data/' + shapefile
 
 """
@@ -41,22 +37,26 @@ box_list = []
 boxes = 'data/NED_Reference/ned_13arcsec_g.shp'
 nameField = "FILE_ID"
 
-# C:\Users\negra\PycharmProjects\Data_Utility\data\random_counties.zip
 """
 This block creates a File Geodatabase and a raster dataset inside the
 geodatabase. The try/accept clauses are because the program will throw an
 exception if the geodatbase ro the raster dataset already exists
 the exceptions need to be changed to be more specific
 """
-try:
-    arcpy.management.CreateFileGDB(os.path.dirname(os.path.abspath(__file__)), "data/datastore")
-except:
+
+if arcpy.Exists("data/datastore.gdb"):
     pass
 
-try:
-    arcpy.CreateMosaicDataset_management("data/datastore.gdb", "mosaick_dataset", 'data/NED_Reference/ned_13arcsec_g.shp' )
-except:
+else:
+    arcpy.management.CreateFileGDB(os.path.dirname(os.path.abspath(__file__)), "data/datastore")
+
+if arcpy.Exists("data/datastore.gdb/mosaick_dataset"):
     pass
+
+else:
+    arcpy.CreateMosaicDataset_management("data/datastore.gdb", "mosaick_dataset", 'data/NED_Reference/ned_13arcsec_g.shp' )
+
+
 """
 This creates feature layers using the variables that point
 to the shapefiles. The feature layer is given a name that
@@ -66,7 +66,7 @@ created in order to work with the data in the shapefile
 
 arcpy.MakeFeatureLayer_management(boxes, "boxes")
 arcpy.MakeFeatureLayer_management(shapefile, "shapefile")
-
+#
 # This selects the tile reference from the tile reference grid that intersects with the shape file
 arcpy.SelectLayerByLocation_management("boxes", "INTERSECT", "shapefile")
 
@@ -85,14 +85,14 @@ with arcpy.da.SearchCursor("boxes", (nameField,)) as cursor:
 This iterates through the list of tiles and
 downloads each one using the get_data function
 """
-get_data(box_list[0])
+
 for box in box_list:
     get_data(box)
 
-"""
-This creates the file paths to the rastesr that have been
-downloaded and puts them in the list raster_list
-"""
+# """
+# This creates the file paths to the rastesr that have been
+# downloaded and puts them in the list raster_list
+# """
 raster_list = []
 for index in box_list:
     name = 'img' + index + '_13.img'
